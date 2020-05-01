@@ -35,4 +35,4 @@ POOL_UPDATE_CHANCE = 0.5
 checkpoint_path = "H:/sandbox/datasets/midi/models/"
 
 # program config
-trainModels = False
+trainModels = True

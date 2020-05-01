@@ -6,11 +6,7 @@ from scripts.conf import *
 """
 Gets all data filenames so they can be lazy loaded later in the program
 """
-def load_dataset_filenames(A="jazz", B="classical"):
-    # define what classes will be
-    classA = GENRES[A]
-    classB = GENRES[B]
-
+def load_dataset_filenames(classA="jazz", classB="classical"):
     # load dataset filenames for each class
     datasetFilenamesA = glob.glob(os.path.join(DATA_PATH, classA, "formatted_*"))
     datasetFilenamesB = glob.glob(os.path.join(DATA_PATH, classB, "formatted_*"))
@@ -21,12 +17,12 @@ def load_dataset_filenames(A="jazz", B="classical"):
 # select a batch of random samples, returns midis and target
 def generate_real_samples(datasetFilenames, n_samples):
     # choose random samples
-    ix = np.random.randint(0, datasetFilenames.shape[0], n_samples)
-    X = np.ones((n_samples, NUMBER_OF_SAMPLES, NUM_OCTAVES, NOTES_PER_OCTAVE))
+    ix = np.random.randint(0, len(datasetFilenames), n_samples)
+    X = np.ones((n_samples, NUMBER_OF_SAMPLES, NUM_OCTAVES, NOTES_PER_OCTAVE, 1))
 
     # load samples from files
     for midiFile in range(ix.shape[0]):
-        X[midiFile, :] = np.load(datasetFilenames[midiFile]).reshape((NUMBER_OF_SAMPLES, NOTES_PER_OCTAVE, NOTES_PER_OCTAVE, 1))
+        X[midiFile, :] = np.load(datasetFilenames[midiFile]).reshape((NUMBER_OF_SAMPLES, NUM_OCTAVES, NOTES_PER_OCTAVE, 1))
 
     # generate 'real' class labels (1)
     y = np.ones((n_samples, 1, 1, 1, 1))
