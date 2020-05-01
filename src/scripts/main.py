@@ -48,6 +48,13 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
         print("\tUpdating generator B->A")
         g_loss2, _, _, _, _ = c_model_BtoA.train_on_batch([X_realB, X_realA], [y_realA, X_realA, X_realB, X_realA])
 
+        # tie convolutional layers of the generators together
+        g_model_AtoB.layers[1].set_weights([g_model_BtoA.layers[-3].get_weights()[0].reshape(7,7,7,1,64),  g_model_AtoB.layers[1].get_weights()[1]])
+        g_model_AtoB.layers[4].set_weights([g_model_BtoA.layers[-6].get_weights()[0], g_model_AtoB.layers[4].get_weights()[1]])
+
+        g_model_AtoB.layers[-3].set_weights([g_model_BtoA.layers[1].get_weights()[0].reshape(7,7,7,64,1),  g_model_AtoB.layers[-3].get_weights()[1]])
+        g_model_AtoB.layers[-6].set_weights([g_model_BtoA.layers[4].get_weights()[0], g_model_AtoB.layers[-6].get_weights()[1]])
+
         # update discriminator for B -> [real/fake]
         print("\tUpdating discriminator B")
         dB_loss1 = d_model_B.train_on_batch(X_realB, y_realB)
@@ -57,9 +64,15 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
         print("\tUpdating generator A->B")
         g_loss1, _, _, _, _ = c_model_AtoB.train_on_batch([X_realA, X_realB], [y_realB, X_realB, X_realA, X_realB])
 
+        # tie convolutional layers of the generators together
+        g_model_BtoA.layers[1].set_weights([g_model_AtoB.layers[-3].get_weights()[0].reshape(7, 7, 7, 1, 64), g_model_BtoA.layers[1].get_weights()[1]])
+        g_model_BtoA.layers[4].set_weights([g_model_AtoB.layers[-6].get_weights()[0], g_model_BtoA.layers[4].get_weights()[1]])
+
+        g_model_BtoA.layers[-3].set_weights([g_model_AtoB.layers[1].get_weights()[0].reshape(7, 7, 7, 64, 1), g_model_BtoA.layers[-3].get_weights()[1]])
+        g_model_BtoA.layers[-6].set_weights([g_model_AtoB.layers[4].get_weights()[0], g_model_BtoA.layers[-6].get_weights()[1]])
+
         # summarize performance
-        print('\tA[%.3f,%.3f] dB[%.3f,%.3f] g[%.3f,%.3f]' % (
-            dA_loss1, dA_loss2, dB_loss1, dB_loss2, g_loss1, g_loss2))
+        print('\tA[%.3f,%.3f] dB[%.3f,%.3f] g[%.3f,%.3f]' % (dA_loss1, dA_loss2, dB_loss1, dB_loss2, g_loss1, g_loss2))
         print('\tElapsed time: %.5f' % (time.time() - start))
 
         if not (i+1) % save_interval:
@@ -89,7 +102,6 @@ def main():
     datasetFileNamesA, datasetFileNamesB = load_dataset_filenames()
     train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoBtoA, c_model_BtoAtoB, (datasetFileNamesA, datasetFileNamesB))
 
-
 """
 This is a practical usage of the models. If the program is not set to train, this will be called. Loads saved models
 and generates MIDI files.
@@ -109,7 +121,7 @@ def generate_midis():
     c_model_AtoBtoA.load_weights(checkpoint_path + "cAB_20")
     c_model_BtoAtoB.load_weights(checkpoint_path + "cBA_20")
 
-    datasetA, fA, datasetB, fB = load_datasets()
+    fA, fB = load_dataset_filenames()
     song = datasetA[0]
     transformed_song, _ = generate_fake_samples(g_model_AtoB, song.reshape((1, 400, 8, 12, 1)))
     retransformed, _ = generate_fake_samples(g_model_BtoA, song.reshape((1, 400, 8, 12, 1)))
