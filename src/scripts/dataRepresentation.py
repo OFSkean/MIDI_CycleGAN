@@ -12,27 +12,38 @@ def check_representation():
     sizesB = [np.sum(i) for i in b]
     plt.hist(sizesB)
     plt.show()
-
+"""
 
 def representation_to_midi(encoded_midis, label):
     for idx, m in enumerate(encoded_midis):
-        file_name = EXAMPLE_LOCATION_PATH + "4_" + label.split('\\')[-1] + ".midi"
-
+        file_name = EXAMPLE_LOCATION_PATH + "4_" + label + ".midi"
         s = stream.Stream()
-        lastINote = 0
-        for i in range(400):
-            for j in range(8):
-                for k in range(12):
-                    if m[i, j, k]:
-                        length, increment = 1, 1
-                        n = note.Note(8 * j + k + 21)
-                        n.quarterLength = length / 8
-                        n.offset = i - lastINote
+
+        # keeps track of which notes are on and when they started
+        activeNotes = dict()
+        for i in range(NUMBER_OF_SAMPLES):
+
+            for j in range(NUM_OCTAVES):
+                for k in range(NOTES_PER_OCTAVE):
+                    ps = NUM_OCTAVES * j + k + 21
+
+                    # look for new notes
+                    if m[i, j, k] and (ps not in activeNotes):
+                        # add note to our set if it's on
+                        activeNotes[ps] = i
+
+                    # look for notes that have just turned off
+                    elif (not m[i, j, k]) and (ps in activeNotes):
+                        n = note.Note()
+                        noteStart = activeNotes.pop(ps)
+                        n.offset = int(noteStart / SAMPLES_PER_BEAT)
+                        n.quarterLength = (i - noteStart) / SAMPLES_PER_BEAT
+
+                        # add note message to the stream
                         s.append(n)
-                        lastINote = i
-        print(len(s.notes))
+
         mf = s.write('midi', fp=file_name)
-"""
+
 
 """
 Given: The path to a MIDI file
