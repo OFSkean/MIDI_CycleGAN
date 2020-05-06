@@ -94,10 +94,9 @@ def main():
     c_model_BtoAtoB = define_composite_model(midi_shape, g_model_BtoA, d_model_A, g_model_AtoB)   # composite: B -> A -> [real/fake, B]
 
     # create datasets
-    d_model_A.summary()
-    g_model_AtoB.summary()
-
     datasetFileNamesA, datasetFileNamesB = load_dataset_filenames()
+
+    # train
     train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoBtoA, c_model_BtoAtoB, (datasetFileNamesA, datasetFileNamesB))
 
 """
