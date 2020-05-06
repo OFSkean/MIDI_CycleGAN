@@ -6,7 +6,10 @@ from keras.layers import Conv3D
 from keras.layers import Conv3DTranspose
 from keras.layers import LeakyReLU
 from keras.layers import Activation
-from keras.layers import Concatenate
+from keras.layers import Add
+from keras.layers import Layer
+import keras
+import tensorflow as tf
 from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
 
 # define the discriminator model
@@ -63,8 +66,8 @@ def resnet_block(n_filters, input_layer):
     # second convolutional layer
     g = Conv3D(n_filters, (3, 3, 3), padding='same', kernel_initializer=init)(g)
     g = InstanceNormalization(axis=-1)(g)
-    # concatenate merge channel-wise with input layer
-    g = Concatenate()([g, input_layer])
+    # add merge channel-wise with input layer
+    g = Add()([g, input_layer])
     return g
 
 # define the standalone generator model
