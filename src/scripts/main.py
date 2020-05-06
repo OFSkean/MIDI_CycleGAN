@@ -28,8 +28,8 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
         start = time.time()
 
         # select a batch of real samples
-        X_realA, y_realA = generate_real_samples(trainA, n_batch)
-        X_realB, y_realB = generate_real_samples(trainB, n_batch)
+        X_realA, y_realA = generate_real_samples(trainA, n_samples)
+        X_realB, y_realB = generate_real_samples(trainB, n_samples)
 
         # generate a batch of fake samples
         X_fakeA, y_fakeA = generate_fake_samples(g_model_BtoA, X_realB)
