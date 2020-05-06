@@ -40,12 +40,12 @@ def define_discriminator(input_shape):
     d = LeakyReLU(alpha=0.2)(d)
 
     # second last output layer
-    d = Conv3D(512, (4, 4, 4), padding='same', kernel_initializer=init)(d)
+    d = Conv3D(512, (2, 4, 4), padding='same', kernel_initializer=init)(d)
     d = InstanceNormalization(axis=-1)(d)
     d = LeakyReLU(alpha=0.2)(d)
 
     # output
-    d = Conv3D(1, (2, 2, 2), strides=(25, 2, 2), padding='same', kernel_initializer=init)(d)
+    d = Conv3D(1, (2, 2, 2), strides=(225, 2, 2), padding='same', kernel_initializer=init)(d)
 
     # define model
     model = Model(in_image, d)
