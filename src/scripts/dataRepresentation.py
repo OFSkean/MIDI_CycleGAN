@@ -3,17 +3,6 @@ import math
 from scripts.util import *
 import multiprocessing as mp
 
-"""
-# check that encoding and decoding are invertible:
-def check_representation():
-    a, _, b, _ = load_datasets()
-
-    sizesA = [np.sum(i) for i in a]
-    sizesB = [np.sum(i) for i in b]
-    plt.hist(sizesB)
-    plt.show()
-"""
-
 def representation_to_midi(encoded_midis, label):
     for idx, m in enumerate(encoded_midis):
         file_name = EXAMPLE_LOCATION_PATH + "4_" + label + ".midi"
