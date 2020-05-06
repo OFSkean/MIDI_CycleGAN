@@ -74,7 +74,6 @@ class CustomLayer(Layer):
         return z
 
     def compute_output_shape(self, input_shape):
-        print('shapes', (input_shape[0], self.out_shape))
         return (input_shape[0], self.out_shape)
 
 # replaces an intermediate layer in a keras model with a tied layer
@@ -93,7 +92,6 @@ def tie_weights(model, other_model, layer_id, other_id, num_samples):
     mergeLayerTemp = x
 
     for i in range(1, len(layers)):
-        print(i)
         if i == layer_id:
             x = newLayer(x)
 
@@ -105,7 +103,6 @@ def tie_weights(model, other_model, layer_id, other_id, num_samples):
                 x = keras.layers.Add()([x, mergeLayerTemp])
             mergeLayerTemp = x
         else:
-            print(x.shape)
             x = layers[i](x)
 
     new_model = Model(input=layers[0].input, output=x)
