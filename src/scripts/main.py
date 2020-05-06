@@ -48,13 +48,6 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
         print("\tUpdating generator B->A")
         g_loss2, _, _, _, _ = c_model_BtoA.train_on_batch([X_realB, X_realA], [y_realA, X_realA, X_realB, X_realA])
 
-        # tie convolutional layers of the generators together
-        g_model_AtoB.layers[1].set_weights([g_model_BtoA.layers[-3].get_weights()[0].reshape(7,7,7,1,64),  g_model_AtoB.layers[1].get_weights()[1]])
-        g_model_AtoB.layers[4].set_weights([g_model_BtoA.layers[-6].get_weights()[0], g_model_AtoB.layers[4].get_weights()[1]])
-
-        g_model_AtoB.layers[-3].set_weights([g_model_BtoA.layers[1].get_weights()[0].reshape(7,7,7,64,1),  g_model_AtoB.layers[-3].get_weights()[1]])
-        g_model_AtoB.layers[-6].set_weights([g_model_BtoA.layers[4].get_weights()[0], g_model_AtoB.layers[-6].get_weights()[1]])
-
         # update discriminator for B -> [real/fake]
         print("\tUpdating discriminator B")
         dB_loss1 = d_model_B.train_on_batch(X_realB, y_realB)
@@ -63,13 +56,6 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
         # update generator A->B via adversarial and cycle loss
         print("\tUpdating generator A->B")
         g_loss1, _, _, _, _ = c_model_AtoB.train_on_batch([X_realA, X_realB], [y_realB, X_realB, X_realA, X_realB])
-
-        # tie convolutional layers of the generators together
-        g_model_BtoA.layers[1].set_weights([g_model_AtoB.layers[-3].get_weights()[0].reshape(7, 7, 7, 1, 64), g_model_BtoA.layers[1].get_weights()[1]])
-        g_model_BtoA.layers[4].set_weights([g_model_AtoB.layers[-6].get_weights()[0], g_model_BtoA.layers[4].get_weights()[1]])
-
-        g_model_BtoA.layers[-3].set_weights([g_model_AtoB.layers[1].get_weights()[0].reshape(7, 7, 7, 64, 1), g_model_BtoA.layers[-3].get_weights()[1]])
-        g_model_BtoA.layers[-6].set_weights([g_model_AtoB.layers[4].get_weights()[0], g_model_BtoA.layers[-6].get_weights()[1]])
 
         # summarize performance
         print('\tA[%.3f,%.3f] dB[%.3f,%.3f] g[%.3f,%.3f]' % (dA_loss1, dA_loss2, dB_loss1, dB_loss2, g_loss1, g_loss2))
@@ -90,6 +76,15 @@ def main():
     g_model_AtoB = define_generator(midi_shape)    # generator: A -> B
     g_model_BtoA = define_generator(midi_shape)    # generator: B -> A
 
+    # tie generator weights together
+    #tie_weights(g_model_AtoB, g_model_BtoA, 64, 7, n_samples)
+    #tie_weights(g_model_AtoB, g_model_BtoA, 67, 4, n_samples)
+    #tie_weights(g_model_AtoB, g_model_BtoA, 70, 1, n_samples)
+
+    #tie_weights(g_model_BtoA, g_model_AtoB, 64, 7, n_samples)
+    #tie_weights(g_model_BtoA, g_model_AtoB, 67, 4, n_samples)
+    #tie_weights(g_model_BtoA, g_model_AtoB, 70, 1, n_samples)
+
     # define discriminator
     d_model_A = define_discriminator(midi_shape)   # discriminator: A -> [real/fake]
     d_model_B = define_discriminator(midi_shape)   # discriminator: B -> [real/fake]
@@ -99,6 +94,9 @@ def main():
     c_model_BtoAtoB = define_composite_model(midi_shape, g_model_BtoA, d_model_A, g_model_AtoB)   # composite: B -> A -> [real/fake, B]
 
     # create datasets
+    d_model_A.summary()
+    g_model_AtoB.summary()
+
     datasetFileNamesA, datasetFileNamesB = load_dataset_filenames()
     train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoBtoA, c_model_BtoAtoB, (datasetFileNamesA, datasetFileNamesB))
 
@@ -107,6 +105,7 @@ This is a practical usage of the models. If the program is not set to train, thi
 and generates MIDI files.
 """
 def generate_midis():
+    # define models
     g_model_AtoB = define_generator(midi_shape)
     g_model_BtoA = define_generator(midi_shape)
     d_model_A = define_discriminator(midi_shape)
@@ -114,49 +113,34 @@ def generate_midis():
     c_model_AtoBtoA = define_composite_model(midi_shape, g_model_AtoB, d_model_B, g_model_BtoA)
     c_model_BtoAtoB = define_composite_model(midi_shape, g_model_BtoA, d_model_A, g_model_AtoB)
 
-    d_model_A.load_weights(checkpoint_path + "dA_20")
-    d_model_B.load_weights(checkpoint_path + "dB_20")
-    g_model_AtoB.load_weights(checkpoint_path + "gAB_20")
-    g_model_BtoA.load_weights(checkpoint_path + "gBA_20")
-    c_model_AtoBtoA.load_weights(checkpoint_path + "cAB_20")
-    c_model_BtoAtoB.load_weights(checkpoint_path + "cBA_20")
-
     fA, fB = load_dataset_filenames()
-    song = datasetA[0]
-    transformed_song, _ = generate_fake_samples(g_model_AtoB, song.reshape((1, 400, 8, 12, 1)))
-    retransformed, _ = generate_fake_samples(g_model_BtoA, song.reshape((1, 400, 8, 12, 1)))
+    song, label = generate_real_samples(fA, 1)
+    transformed_song, _ = generate_fake_samples(g_model_AtoB, song)
+    retransformed, _ = generate_fake_samples(g_model_BtoA, song)
 
-    song.reshape((400, 8, 12))
-    transformed_song = transformed_song[0].reshape(400, 8, 12)
-    retransformed = retransformed[0].reshape(400, 8, 12)
+    song.reshape((NUMBER_OF_SAMPLES, NUM_OCTAVES, NOTES_PER_OCTAVE))
+    transformed_song = transformed_song[0].reshape((NUMBER_OF_SAMPLES, NUM_OCTAVES, NOTES_PER_OCTAVE))
+    retransformed = retransformed[0].reshape((NUMBER_OF_SAMPLES, NUM_OCTAVES, NOTES_PER_OCTAVE))
 
-    print(np.sum(song), np.sum(transformed_song), np.sum(retransformed))
-    ttt = [np.sum(q) for q in song]
-    maxIdx = ttt.index(2)
-    print(maxIdx)
+    representation_to_midi(song.reshape((1, NUMBER_OF_SAMPLES, 8, 12, 1)), "original")
+    representation_to_midi(transformed_song.reshape(1, NUMBER_OF_SAMPLES, 8, 12, 1),  "new")
 
-    print(np.sum(song[maxIdx]))
-    print(np.sum(transformed_song[maxIdx]))
-    print(np.sum(retransformed[maxIdx]))
-
-    print(song[maxIdx][:])
-    print(transformed_song[maxIdx][:])
-    print(retransformed[maxIdx][:])
-
-    plt.imshow(song[maxIdx][:])
+    # compare cross-section of input with both outputs
+    plt.imshow(song[0][:])
     plt.savefig("tttt_original")
     plt.clf()
 
-    plt.imshow(transformed_song[maxIdx][:])
+    plt.imshow(transformed_song[0][:])
     plt.savefig("tttt_fake_AB")
     plt.clf()
 
-    plt.imshow(retransformed[maxIdx][:])
+    plt.imshow(retransformed[0][:])
     plt.savefig("tttt_fake_BA")
     plt.clf()
-    #representation_to_midi(song.reshape(1, 400, 8, 12, 1), fA[0] + "original")
-    #representation_to_midi(transformed_song.reshape(1, 400, 8, 12, 1), fA[0] + "new")
+
 
 if __name__ == "__main__":
     if trainModels:
         main()
+    else:
+        generate_midis()
