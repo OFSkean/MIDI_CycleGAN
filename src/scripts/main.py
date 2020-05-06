@@ -107,10 +107,6 @@ def generate_midis():
     # define models
     g_model_AtoB = define_generator(midi_shape)
     g_model_BtoA = define_generator(midi_shape)
-    d_model_A = define_discriminator(midi_shape)
-    d_model_B = define_discriminator(midi_shape)
-    c_model_AtoBtoA = define_composite_model(midi_shape, g_model_AtoB, d_model_B, g_model_BtoA)
-    c_model_BtoAtoB = define_composite_model(midi_shape, g_model_BtoA, d_model_A, g_model_AtoB)
 
     fA, fB = load_dataset_filenames()
     song, label = generate_real_samples(fA, 1)
